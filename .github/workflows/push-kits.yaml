@@ -6,7 +6,7 @@ on:
       sbx_release:
         description: "docker/sbx-releases tag to install"
         required: true
-        default: "v0.32.0"
+        default: "v0.38.0"
       tag:
         description: "OCI tag to publish"
         required: false
