@@ -1,0 +1,73 @@
+schemaVersion: "2"
+kind: mixin
+name: mem0
+version: "1.0.0"
+displayName: Mem0 (Gemini)
+description: "Adds the Mem0 memory layer (mem0ai) to an agent, using Google Gemini for both the LLM and the embedder. Store the key with: sbx secret set -g google (the kit holds no key)."
+sourceURL: https://github.com/ajeetraina/sbx-mem0-kits
+licenses:
+  - Apache-2.0
+
+permissions:
+  network:
+    allow:
+      - pypi.org
+      - files.pythonhosted.org
+      - raw.githubusercontent.com
+      - github.com
+      - release-assets.githubusercontent.com
+      - generativelanguage.googleapis.com
+
+environment:
+  variables:
+    GOOGLE_API_KEY: "placeholder"
+    MEM0_TELEMETRY: "false"
+    NO_PROXY: "localhost,127.0.0.1,host.docker.internal"
+    no_proxy: "localhost,127.0.0.1,host.docker.internal"
+
+setup:
+  install:
+    - command: "pip install --break-system-packages 'mem0ai[nlp]==2.0.5' google-genai click"
+      user: "1000"
+      description: "Install Mem0 with NLP extras, the google-genai SDK, plus click"
+    - command: "PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m spacy download en_core_web_sm"
+      user: "1000"
+      description: "Download spaCy English model"
+  files:
+    - path: /home/agent/.mem0/config.json
+      mode: "0644"
+      onlyIfMissing: true
+      description: "Mem0 config using Gemini; key injected by the sbx proxy from the stored google secret"
+      content: |
+        {
+          "vector_store": {
+            "provider": "qdrant",
+            "config": {
+              "collection_name": "mem0_gemini",
+              "path": "/home/agent/.mem0/qdrant",
+              "on_disk": true,
+              "embedding_model_dims": 768
+            }
+          },
+          "llm": {
+            "provider": "gemini",
+            "config": {
+              "model": "gemini-2.5-flash"
+            }
+          },
+          "embedder": {
+            "provider": "gemini",
+            "config": {
+              "model": "models/gemini-embedding-001"
+            }
+          }
+        }
+
+agentInstructions:
+  content: |
+    ## Mem0 memory layer (Gemini)
+
+    The mem0ai package plus the google-genai SDK are installed and wired to Gemini
+    for both the LLM and the embedder. `google` is a built-in sbx service: the API
+    key is supplied by the sbx proxy from the stored google secret, so it is not
+    present in the sandbox.

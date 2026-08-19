@@ -1,0 +1,9 @@
+.DS_Store
+.sbx/.env
+.sbx/*.env
+**/.venv/
+**/__pycache__/
+**/*.py[cod]
+*.tar
+*.zip
+*.claude

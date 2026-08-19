@@ -1,0 +1,55 @@
+name: Publish Kits
+
+on:
+  workflow_dispatch:
+    inputs:
+      sbx_release:
+        description: "docker/sbx-releases tag to install"
+        required: true
+        default: "v0.32.0"
+      tag:
+        description: "OCI tag to publish"
+        required: false
+        default: "latest"
+
+jobs:
+  publish-kit:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install SBX
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SBX_RELEASE: ${{ inputs.sbx_release }}
+        run: |
+          set -euo pipefail
+          gh release download "$SBX_RELEASE" \
+            --repo docker/sbx-releases \
+            --pattern 'DockerSandboxes-linux-amd64-ubuntu2404.deb' \
+            --output /tmp/docker-sandboxes.deb
+          sudo apt-get update
+          sudo apt-get install -y /tmp/docker-sandboxes.deb
+          sbx version
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Publish kit artifact
+        env:
+          DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
+          TAG: ${{ inputs.tag }}
+        run: bash ./scripts/push-kits.sh
+
+      - name: Sync Docker Hub overview page
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/sbx-mem0-kits
+          readme-filepath: ./DOCKERHUB.md
+          short-description: "Docker Sandboxes mixin adding the Mem0 memory layer (DMR, OpenAI, Gemini)"
