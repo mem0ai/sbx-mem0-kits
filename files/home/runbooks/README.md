@@ -13,3 +13,16 @@ python3 ~/runbooks/travel.py "Plan my return leg."   # fresh process; it still k
 ```
 
 The first run starts with an empty profile; the second recalls what you told it.
+
+## verify.py
+
+A one-shot smoke test: writes a fact and reads it back through the local Docker
+Model Runner and the on-disk Qdrant store, so you can confirm the memory layer
+works end to end with no cloud call.
+
+```console
+python3 ~/runbooks/verify.py
+```
+
+If the stored preference comes back in the printed results, memory is working.
+
