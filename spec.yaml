@@ -4,7 +4,7 @@ name: mem0
 version: "1.0.0"
 displayName: Mem0 (Docker Model Runner)
 description: "Adds the Mem0 memory layer (mem0ai) to an agent, pre-wired to a local Docker Model Runner for both the LLM and the embedder — no cloud credentials, no external vector database."
-sourceURL: https://github.com/ajeetraina/sbx-mem0-kits
+sourceURL: https://github.com/mem0ai/sbx-mem0-kits
 licenses:
   - Apache-2.0
 
