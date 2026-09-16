@@ -5,7 +5,7 @@ A standalone [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/) kit
 any sandbox agent. Mem0 is a semantic memory store, so it needs an embedder and an
 LLM. This image ships in three backend flavors, one per tag.
 
-Source and full docs: https://github.com/ajeetraina/sbx-mem0-kits
+Source and full docs: https://github.com/mem0ai/sbx-mem0-kits
 
 ## Image tags
 
@@ -51,4 +51,4 @@ SDK. No hand-editing required.
 
 Per-provider setup notes, validation details, and the raw `spec.yaml` for each kit
 live on GitHub:
-https://github.com/ajeetraina/sbx-mem0-kits/tree/main/providers
+https://github.com/mem0ai/sbx-mem0-kits/tree/main/providers

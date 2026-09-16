@@ -83,13 +83,13 @@ sbx secret set -g google && sbx run --kit docker.io/ajeetraina777/sbx-mem0-kits:
 Or straight from this repo over git:
 
 ```console
-sbx run --kit "git+https://github.com/ajeetraina/sbx-mem0-kits.git" claude
+sbx run --kit "git+https://github.com/mem0ai/sbx-mem0-kits.git" claude
 ```
 
 Or from a local clone (the kit lives at the repo root):
 
 ```console
-git clone https://github.com/ajeetraina/sbx-mem0-kits.git
+git clone https://github.com/mem0ai/sbx-mem0-kits.git
 sbx run --kit ./sbx-mem0-kits/ claude
 ```
 
@@ -230,8 +230,10 @@ In case you face the following error message while runnng `sbx run --kit docker.
 
 ```
 sbx run --kit docker.io/ajeetraina777/sbx-mem0-kits:openai claude
-Creating new sandbox 'claude-ajeetraina'...
-ERROR: failed to create sandbox: create runtime: create runtime: sandboxd error: status 403: mount policy denied: /Users/ajeetraina: no applicable policies for op(action=fs:mount:write, resource=fs:path:/Users/ajeetraina)
+Creating new sandbox 'claude-yourname'...
+ERROR: failed to create sandbox: create runtime: create runtime: sandboxd error: status 403: mount policy denied: /Users/yourname: no applicable policies for op(action=fs:mount:write, resource=fs:path:/Users/yourname)
 ```
+
+Here `yourname` is your account name (e.g. `/Users/John`); the sandbox name `claude-yourname` is derived from it.
 
 The error is from the sbx sandbox runtime refusing to mount your home directory (/Users/your-home-directory). When you run sbx run from a folder, it tries to mount that folder (your current working directory) into the sandbox with write access and there's a policy that forbids mounting /Users/your-home-directory directly (mounting your entire home dir is blocked for safety). Pick up any other director other than home directory.
