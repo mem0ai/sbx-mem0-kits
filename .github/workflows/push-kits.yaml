@@ -41,7 +41,7 @@ jobs:
 
       - name: Publish kit artifact
         env:
-          DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_NAMESPACE: ${{ vars.DOCKERHUB_NAMESPACE || 'mem0' }}
           TAG: ${{ inputs.tag }}
         run: bash ./scripts/push-kits.sh
 
@@ -50,6 +50,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ secrets.DOCKERHUB_USERNAME }}/sbx-mem0-kits
+          repository: ${{ vars.DOCKERHUB_NAMESPACE || 'mem0' }}/sbx-mem0-kits
           readme-filepath: ./DOCKERHUB.md
           short-description: "Docker Sandboxes mixin adding the Mem0 memory layer (DMR, OpenAI, Gemini)"
