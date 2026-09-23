@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-namespace="${DOCKERHUB_NAMESPACE:-${DOCKER_NAMESPACE:-ajeetraina777}}"
+namespace="${DOCKERHUB_NAMESPACE:-${DOCKER_NAMESPACE:-mem0}}"
 tag="${TAG:-latest}"
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 image="docker.io/$namespace/sbx-mem0-kits"

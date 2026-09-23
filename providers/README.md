@@ -44,7 +44,7 @@ provider, and run it:
 
 ```bash
 sbx secret set -g openai            # cloud providers only (or -g google)
-sbx run --kit docker.io/ajeetraina777/sbx-mem0-kits:openai claude
+sbx run --kit docker.io/mem0/sbx-mem0-kits:openai claude
 # or from this repo: sbx run --kit ./kits/openai claude
 ```
 

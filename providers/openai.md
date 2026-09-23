@@ -28,7 +28,7 @@ This provider is published as a ready-made image. Store your key, then launch:
 
 ```bash
 echo "$OPENAI_API_KEY" | sbx secret set -g openai
-sbx run --kit docker.io/ajeetraina777/sbx-mem0-kits:openai claude
+sbx run --kit docker.io/mem0/sbx-mem0-kits:openai claude
 ```
 
 Or run the same spec straight from this repo, no Hub pull:

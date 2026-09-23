@@ -71,13 +71,13 @@ pick the one matching the secret you stored in step 2:
 
 ```console
 # DMR (default, no key needed) — :latest is the same as :dmr
-sbx run --kit docker.io/ajeetraina777/sbx-mem0-kits:latest claude
+sbx run --kit docker.io/mem0/sbx-mem0-kits:latest claude
 
 # OpenAI — store the key and launch in one line
-sbx secret set -g openai && sbx run --kit docker.io/ajeetraina777/sbx-mem0-kits:openai claude
+sbx secret set -g openai && sbx run --kit docker.io/mem0/sbx-mem0-kits:openai claude
 
 # Gemini
-sbx secret set -g google && sbx run --kit docker.io/ajeetraina777/sbx-mem0-kits:gemini claude
+sbx secret set -g google && sbx run --kit docker.io/mem0/sbx-mem0-kits:gemini claude
 ```
 
 Or straight from this repo over git:
@@ -111,7 +111,7 @@ So you can swap `claude` for any of these, for example Codex on OpenAI-backed
 memory:
 
 ```console
-sbx secret set -g openai && sbx run --kit docker.io/ajeetraina777/sbx-mem0-kits:openai codex
+sbx secret set -g openai && sbx run --kit docker.io/mem0/sbx-mem0-kits:openai codex
 ```
 
 Note that `gemini` here is an agent (Google's Gemini CLI), which is unrelated to
@@ -229,7 +229,7 @@ notes. More detail: [providers/README.md](./providers/README.md).
 In case you face the following error message while runnng `sbx run --kit docker.io/..`:
 
 ```
-sbx run --kit docker.io/ajeetraina777/sbx-mem0-kits:openai claude
+sbx run --kit docker.io/mem0/sbx-mem0-kits:openai claude
 Creating new sandbox 'claude-yourname'...
 ERROR: failed to create sandbox: create runtime: create runtime: sandboxd error: status 403: mount policy denied: /Users/yourname: no applicable policies for op(action=fs:mount:write, resource=fs:path:/Users/yourname)
 ```

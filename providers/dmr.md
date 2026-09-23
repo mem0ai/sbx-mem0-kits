@@ -68,7 +68,7 @@ Published as the Hub image (`:latest`, also tagged `:dmr`), or run the standalon
 spec from this repo:
 
 ```console
-sbx run --kit docker.io/ajeetraina777/sbx-mem0-kits:latest claude
+sbx run --kit docker.io/mem0/sbx-mem0-kits:latest claude
 # or from this repo:
 sbx run --kit ./kits/dmr claude
 ```

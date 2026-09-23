@@ -27,17 +27,17 @@ Local default (DMR). Enable Docker Model Runner and pull the two models on the h
 
     docker model pull ai/gemma3
     docker model pull ai/mxbai-embed-large
-    sbx run --kit docker.io/ajeetraina777/sbx-mem0-kits:latest claude
+    sbx run --kit docker.io/mem0/sbx-mem0-kits:latest claude
 
 OpenAI. Store the key once with sbx (never on the command line), then run:
 
     echo "$OPENAI_API_KEY" | sbx secret set -g openai
-    sbx run --kit docker.io/ajeetraina777/sbx-mem0-kits:openai claude
+    sbx run --kit docker.io/mem0/sbx-mem0-kits:openai claude
 
 Gemini:
 
     echo "$GOOGLE_API_KEY" | sbx secret set -g google
-    sbx run --kit docker.io/ajeetraina777/sbx-mem0-kits:gemini claude
+    sbx run --kit docker.io/mem0/sbx-mem0-kits:gemini claude
 
 The cloud tags hold no key. The sbx proxy injects it from the stored secret, so the
 key never enters the sandbox. `sbx run` has no `-e` flag by design.

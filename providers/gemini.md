@@ -27,7 +27,7 @@ This provider is published as a ready-made image. Store your key, then launch:
 
 ```bash
 echo "$GOOGLE_API_KEY" | sbx secret set -g google
-sbx run --kit docker.io/ajeetraina777/sbx-mem0-kits:gemini claude
+sbx run --kit docker.io/mem0/sbx-mem0-kits:gemini claude
 ```
 
 Or run the same spec straight from this repo, no Hub pull:
