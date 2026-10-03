@@ -48,6 +48,10 @@ sbx run --kit docker.io/mem0/sbx-mem0-kits:openai claude
 # or from this repo: sbx run --kit ./kits/openai claude
 ```
 
+There are also **v3** kits under [`../v3`](../v3) (one dir per provider:
+`../v3/mem0`, `../v3/mem0-openai`, `../v3/mem0-gemini`) that compose onto a v3
+workload: `sbx run docker/sbx-kit-shell:1.0.0 --kit ./v3/mem0-openai .`.
+
 No hand-editing of `config.json` or `spec.yaml`. The matching `permissions.network.allow`,
 install steps, and `config.json` are already baked into each kit. Keys are never
 stored in the kit; the sbx proxy injects them from the stored secret, so they

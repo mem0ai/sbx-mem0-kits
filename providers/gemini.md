@@ -36,6 +36,14 @@ Or run the same spec straight from this repo, no Hub pull:
 sbx run --kit ./kits/gemini claude
 ```
 
+Or the **v3** kit (composes onto a v3 workload — see
+[`v3/mem0-gemini/`](../v3/mem0-gemini)):
+
+```bash
+sbx secret set google
+sbx run docker/sbx-kit-shell:1.0.0 --kit ./v3/mem0-gemini .
+```
+
 ## What the kit contains
 
 Gemini needs two things beyond the OpenAI setup, and `kits/gemini/spec.yaml`

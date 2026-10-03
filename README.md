@@ -9,12 +9,63 @@ to any sandbox agent, pre-wired to a local [Docker Model Runner](https://docs.do
 
 DMR is the zero-config default. It works with no cloud keys, but the embedder and LLM are both swappable. See [providers/](./providers/) for copy-paste config for OpenAI and Gemini.
 
-> **Schema v2.** These kits use the sbx kit **schema v2** (`schemaVersion: "2"`).
-> If you are porting from the older v1 layout, the field renames are:
+> **Two schemas, both published.** This repo ships the kit in **both** sbx kit
+> schemas, because a v3 mixin only composes onto v3 workloads and a v2 mixin
+> only onto v2 agents:
+>
+> - **Schema v2** (`schemaVersion: "2"`) - the `spec.yaml` at the repo root and
+>   under [`kits/`](./kits). Published with [`scripts/push-kits.sh`](./scripts/push-kits.sh).
+> - **Schema v3** (`schemaVersion: "3"`) - the typed-capability kits under
+>   [`v3/`](./v3): [`v3/mem0/`](./v3/mem0), [`v3/mem0-openai/`](./v3/mem0-openai)
+>   and [`v3/mem0-gemini/`](./v3/mem0-gemini). Published with
+>   [`scripts/push-kits-v3.sh`](./scripts/push-kits-v3.sh). See
+>   [**Schema v3 kits**](#schema-v3-kits) below.
+>
+> If you are porting from the older v1 layout, the v2 field renames are:
 > `network.allowedDomains` → `permissions.network.allow`,
 > `commands.install` → `setup.install`,
 > `commands.initFiles` → `setup.files`, and
 > top-level `memory` → `agentInstructions.content`.
+
+## Schema v3 kits
+
+The v3 kits express the same thing as the v2 specs - install `mem0ai`, wire
+`~/.mem0/config.json`, set the memory env, allow the right hosts - as **typed
+capabilities** in an OCI-image kit. One directory per provider flavor:
+
+| Directory | Flavor | LLM + embedder | Credential |
+|---|---|---|---|
+| [`v3/mem0/`](./v3/mem0) | DMR (default) | local Docker Model Runner | none |
+| [`v3/mem0-openai/`](./v3/mem0-openai) | OpenAI | `gpt-4o-mini` + `text-embedding-3-small` | `openai` |
+| [`v3/mem0-gemini/`](./v3/mem0-gemini) | Gemini | `gemini-2.5-flash` + `gemini-embedding-001` | `google` |
+
+Each holds a descriptor (`*.yaml`), an overlay recipe (`*.dockerfile`) and a
+staged agent-context file. A v3 mixin **composes onto a v3 workload** (the
+`sbx run <workload> --kit <mixin> .` form), rather than being layered onto an
+agent name as in v2. Run one straight from this repo against a shell workload:
+
+```console
+# DMR (needs the two models pulled on the host - see Prerequisites)
+sbx run docker/sbx-kit-shell:1.0.0 --kit ./v3/mem0 .
+
+# OpenAI - store the key first; the proxy injects it (the kit holds no key)
+sbx secret set openai
+sbx run docker/sbx-kit-shell:1.0.0 --kit ./v3/mem0-openai .
+
+# Gemini
+sbx secret set google
+sbx run docker/sbx-kit-shell:1.0.0 --kit ./v3/mem0-gemini .
+```
+
+Inside the sandbox, `python3 -c "import mem0"` works, `~/.mem0/config.json` is
+wired, and the demo `~/runbooks/` ship as before. The published v3 images reuse
+the same Hub repo and tags as v2 (`:latest`/`:dmr`, `:openai`, `:gemini`), so
+the `--kit docker.io/mem0/sbx-mem0-kits:<tag>` references below resolve to the
+v3 kit on a v3-capable sbx.
+
+> The build/run/verify details of the migration (field mapping, ownership
+> rules, `kit-tck` conformance) follow the Docker Sandboxes
+> [v3 kit spec](https://github.com/docker/sandbox-kit-spec).
 
 
 ## Prerequisites
@@ -37,7 +88,7 @@ docker model pull ai/mxbai-embed-large   # embedder (1024-dim)
 
 ### 2. Setting up the secret key (cloud providers only)
 
-The DMR default needs no key — skip this step. You only set a secret when you
+The DMR default needs no key - skip this step. You only set a secret when you
 swap in a cloud provider (OpenAI or Gemini). Store it once with sbx's secret
 manager; the key is never baked into the kit, and the sbx proxy injects it into
 the sandbox at runtime (`sbx run` has no `-e` flag).
@@ -70,10 +121,10 @@ Layer the mixin onto an agent. Each provider is published as its own image tag -
 pick the one matching the secret you stored in step 2:
 
 ```console
-# DMR (default, no key needed) — :latest is the same as :dmr
+# DMR (default, no key needed) - :latest is the same as :dmr
 sbx run --kit docker.io/mem0/sbx-mem0-kits:latest claude
 
-# OpenAI — store the key and launch in one line
+# OpenAI - store the key and launch in one line
 sbx secret set -g openai && sbx run --kit docker.io/mem0/sbx-mem0-kits:openai claude
 
 # Gemini
@@ -122,9 +173,9 @@ Arguments meant for the agent itself go after a `--` separator, e.g.
 ### 4. Confirm the kit installed correctly 
 
 Once you're in the sandbox's Claude session, use `!` shell escapes to prove the
-mixin is really inside. The kit does four observable things — installs
+mixin is really inside. The kit does four observable things - installs
 `mem0ai`, sets env vars, writes `~/.mem0/config.json`, and injects a memory
-note — so you can verify it on independent layers, from a cheap import check up
+note - so you can verify it on independent layers, from a cheap import check up
 to a full end-to-end run.
 
 **4a. The package is installed (the pinned version, in the user-site path):**
@@ -134,10 +185,10 @@ to a full end-to-end run.
 ```
 
 Expect `mem0ai 2.0.5` (the exact pin from this kit's `spec.yaml`) installed
-under `/home/agent/.local/lib/.../site-packages/` — the user-site location that
+under `/home/agent/.local/lib/.../site-packages/` - the user-site location that
 matches the kit installing as user `1000` rather than as root.
 
-**4b. The mixin's env vars are present** — these are declared only in the kit's
+**4b. The mixin's env vars are present** - these are declared only in the kit's
 `spec.yaml`, so they are a fingerprint that the kit (not a manual `pip install`)
 wired things up:
 
@@ -154,7 +205,7 @@ Expect `OPENAI_BASE_URL=http://host.docker.internal:12434/engines/v1`,
 !cat /home/agent/.mem0/config.json
 ```
 
-**4d. End-to-end functional proof** — add a memory and read it back through the
+**4d. End-to-end functional proof** - add a memory and read it back through the
 local DMR. This single command transitively exercises the package, the config
 file, the env vars, and the DMR connection, so if you only run one check, run
 this one:
@@ -190,7 +241,7 @@ Expect a JSON list including ai/gemma3 and ai/mxbai-embed-large.
 
 The kit ships runnable demos under `~/runbooks/`. They are plain files under
 [`files/home/runbooks/`](./files/home/runbooks/) in this repo (the
-[sbx-kits-contrib][contrib] `files/home/` convention — everything under it is
+[sbx-kits-contrib][contrib] `files/home/` convention - everything under it is
 mirrored into `/home/agent/`), **not** hard-coded into `spec.yaml`. The DMR tags
 include `travel.py`, a travel assistant that remembers the traveler across
 separate runs:
@@ -200,7 +251,7 @@ separate runs:
 !python3 ~/runbooks/travel.py "Plan my return leg."   # fresh process; it still knows you
 ```
 
-To add a runbook, drop a `*.py` in `files/home/runbooks/` — it ships
+To add a runbook, drop a `*.py` in `files/home/runbooks/` - it ships
 automatically, no `spec.yaml` change. Because the tree lives at the repo root,
 `sbx run --kit ./` picks it up for local testing too.
 

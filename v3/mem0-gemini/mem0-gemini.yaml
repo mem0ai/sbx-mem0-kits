@@ -1,0 +1,120 @@
+# syntax=docker/sandbox-kit:3
+# yaml-language-server: $schema=https://raw.githubusercontent.com/docker/sandbox-kit-spec/main/schema/kit.schema.json
+#
+# The Mem0 memory kit (Gemini flavor) as a Kit v3 mixin — the same declarations
+# as the v2 ../kits/gemini/spec.yaml, expressed as typed capabilities. Mem0
+# uses Google Gemini for both the LLM and the embedder, via the google-genai
+# SDK. The kit holds no key: store it once with `sbx secret set google` and the
+# sbx proxy injects it on the wire.
+#
+# The v2 mixin and this v3 mixin both stay published: a v3 mixin only composes
+# onto v3 workloads and the v2 mixin only onto v2 agents. Keep them in sync.
+schemaVersion: "3"
+kind: mixin
+displayName: Mem0 (Gemini)
+author: "Mem0 <founders@mem0.ai>"
+description: >-
+  Adds the Mem0 memory layer (mem0ai) to an agent, using Google Gemini for both
+  the LLM and the embedder. Store the key with: sbx secret set google (the kit
+  holds no key). Layer it onto a shell or agent workload; mem0 is then
+  importable from python3.
+sourceUrl: https://github.com/mem0ai/sbx-mem0-kits
+licenses: [Apache-2.0]
+
+# MIGRATION NOTE (v2 → v3): the v2 kit set version "1.0.0". mem0ai is pinned to
+# 2.0.5 in the install hook, so the mixin offers that name@version and uses it
+# as its own version. Keep in step across all three provider flavors.
+version: "2.0.5"
+provides: ["mem0@2.0.5"]
+
+# MIGRATION NOTE: as with the other flavors, the install hook needs python3 +
+# pip on whatever base this lands on. Requiring an unprovidable name refuses
+# composition everywhere, so verify against the base's dpkg database before
+# uncommenting (see mem0/mem0.yaml for the dpkg-query checks):
+# requires: ["deb/python3", "deb/python3-pip"]
+
+capabilities:
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      # Install hooks reach PyPI (mem0ai + google-genai) and GitHub (spaCy model).
+      install:
+        allow:
+          - pypi.org
+          - files.pythonhosted.org
+          - raw.githubusercontent.com
+          - github.com
+          - release-assets.githubusercontent.com
+      # The agent reaches Gemini for both halves at steady state. This host is
+      # also the credential's inject domain below, so it MUST appear here.
+      runtime:
+        allow:
+          - generativelanguage.googleapis.com
+
+  # MIGRATION NOTE: the v2 kit declared NO credentials[] block — it set
+  # GOOGLE_API_KEY="placeholder" in env and relied on sbx's built-in `google`
+  # service injecting the stored key on the wire. v3 does not auto-inject from
+  # the environment, so the need is now stated explicitly. proxyManaged means
+  # the container only ever sees a sentinel in GOOGLE_API_KEY (the SDK needs a
+  # non-empty key present to send a request); the proxy swaps in the real key
+  # on requests to generativelanguage.googleapis.com. `optional: true`
+  # preserves v2's non-required behavior — but store a key first, the Gemini
+  # flavor is useless without one.
+  - type: com.docker.sandbox/credential@1
+    optional: true
+    description: "Google AI (Gemini) API key for the Mem0 LLM + embedder (sbx secret set google)"
+    config:
+      service: google
+      phase: runtime
+      apiKey:
+        name: GOOGLE_API_KEY
+        proxyManaged: true
+        inject:
+          - {domain: generativelanguage.googleapis.com, header: x-goog-api-key, format: "%s"}
+
+  - type: com.docker.sandbox/agent-context@1
+    config:
+      contentFile: ./mem0-gemini-context.md
+
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      # See mem0/mem0.yaml for why these stay create-time hooks. Gemini needs
+      # the google-genai SDK (Mem0's gemini provider imports it, but it is not
+      # a mem0ai dependency), so it is added to the install here.
+      install:
+        - command: "pip install --break-system-packages 'mem0ai[nlp]==2.0.5' google-genai click"
+          user: "1000"
+          env: [HTTP_PROXY, HTTPS_PROXY]
+          description: "Install Mem0 with NLP extras, the google-genai SDK, plus click"
+        - command: "PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m spacy download en_core_web_sm"
+          user: "1000"
+          env: [HTTP_PROXY, HTTPS_PROXY]
+          description: "Download spaCy English model"
+      files:
+        - path: /home/agent/.mem0/config.json
+          mode: "0644"
+          overwrite: false
+          description: "Mem0 config using Gemini; key injected by the sbx proxy from the stored google secret"
+          content: |
+            {
+              "vector_store": {
+                "provider": "qdrant",
+                "config": {
+                  "collection_name": "mem0_gemini",
+                  "path": "/home/agent/.mem0/qdrant",
+                  "on_disk": true,
+                  "embedding_model_dims": 768
+                }
+              },
+              "llm": {
+                "provider": "gemini",
+                "config": {
+                  "model": "gemini-2.5-flash"
+                }
+              },
+              "embedder": {
+                "provider": "gemini",
+                "config": {
+                  "model": "models/gemini-embedding-001"
+                }
+              }
+            }

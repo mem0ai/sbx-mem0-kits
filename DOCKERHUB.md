@@ -7,6 +7,11 @@ LLM. This image ships in three backend flavors, one per tag.
 
 Source and full docs: https://github.com/mem0ai/sbx-mem0-kits
 
+> **Schema v2 and v3.** The kit is published in both sbx kit schemas. A v3 mixin
+> composes onto a v3 workload (`sbx run <workload> --kit <image> .`); a v2 mixin
+> layers onto a v2 agent. Current sbx releases are v3-capable. See the GitHub
+> repo for the v3 kit directories (`mem0/`, `mem0-openai/`, `mem0-gemini/`).
+
 ## Image tags
 
 | Tag | LLM | Embedder | Credential |

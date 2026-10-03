@@ -1,0 +1,121 @@
+# syntax=docker/sandbox-kit:3
+# yaml-language-server: $schema=https://raw.githubusercontent.com/docker/sandbox-kit-spec/main/schema/kit.schema.json
+#
+# The Mem0 memory kit (OpenAI flavor) as a Kit v3 mixin — the same declarations
+# as the v2 ../kits/openai/spec.yaml, expressed as typed capabilities. Mem0
+# uses OpenAI for both the LLM and the embedder. The kit holds no key: store it
+# once with `sbx secret set openai` and the sbx proxy injects it on the wire.
+#
+# The v2 mixin and this v3 mixin both stay published: a v3 mixin only composes
+# onto v3 workloads and the v2 mixin only onto v2 agents. Keep them in sync.
+schemaVersion: "3"
+kind: mixin
+displayName: Mem0 (OpenAI)
+author: "Mem0 <founders@mem0.ai>"
+description: >-
+  Adds the Mem0 memory layer (mem0ai) to an agent, using OpenAI for both the
+  LLM and the embedder. Store the key with: sbx secret set openai (the kit
+  holds no key). Layer it onto a shell or agent workload; mem0 is then
+  importable from python3.
+sourceUrl: https://github.com/mem0ai/sbx-mem0-kits
+licenses: [Apache-2.0]
+
+# MIGRATION NOTE (v2 → v3): the v2 kit set version "1.0.0". mem0ai is pinned to
+# 2.0.5 in the install hook, so the mixin offers that name@version and uses it
+# as its own version. Keep in step across all three provider flavors.
+version: "2.0.5"
+provides: ["mem0@2.0.5"]
+
+# MIGRATION NOTE: as with the DMR flavor, the install hook needs python3 + pip
+# on whatever base this lands on. Requiring an unprovidable name refuses
+# composition everywhere, so verify against the base's dpkg database before
+# uncommenting (see mem0/mem0.yaml for the dpkg-query checks):
+# requires: ["deb/python3", "deb/python3-pip"]
+
+capabilities:
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      # Install hooks reach PyPI (mem0ai) and GitHub (spaCy model).
+      install:
+        allow:
+          - pypi.org
+          - files.pythonhosted.org
+          - raw.githubusercontent.com
+          - github.com
+          - release-assets.githubusercontent.com
+      # The agent reaches OpenAI for both halves at steady state. This host is
+      # also the credential's inject domain below, so it MUST appear here.
+      runtime:
+        allow:
+          - api.openai.com
+
+  # MIGRATION NOTE: the v2 kit declared NO credentials[] block — it set
+  # OPENAI_API_KEY="placeholder" in env and relied on sbx's built-in `openai`
+  # service injecting the stored key on the wire. v3 does not auto-inject from
+  # the environment (credential@1: "Host environment variables never
+  # auto-inject"), so the need is now stated explicitly here. proxyManaged
+  # means the container only ever sees a sentinel in OPENAI_API_KEY; the proxy
+  # swaps in the real key on requests to api.openai.com. `optional: true`
+  # preserves v2's non-required behavior (DMR is the zero-key default) — but
+  # the OpenAI flavor is useless without a bound key, so store one first.
+  - type: com.docker.sandbox/credential@1
+    optional: true
+    description: "OpenAI API key for the Mem0 LLM + embedder (sbx secret set openai)"
+    config:
+      service: openai
+      phase: runtime
+      apiKey:
+        name: OPENAI_API_KEY
+        proxyManaged: true
+        inject:
+          - {domain: api.openai.com, header: Authorization, format: "Bearer %s"}
+
+  - type: com.docker.sandbox/agent-context@1
+    config:
+      contentFile: ./mem0-openai-context.md
+
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      # See mem0/mem0.yaml for why these stay create-time hooks rather than
+      # overlay layers (install into the composed base's own Python). The
+      # openai SDK ships as a mem0ai dependency, so no extra package here.
+      install:
+        - command: "pip install --break-system-packages 'mem0ai[nlp]==2.0.5' click"
+          user: "1000"
+          env: [HTTP_PROXY, HTTPS_PROXY]
+          description: "Install Mem0 with NLP extras plus click (openai SDK ships with mem0ai)"
+        - command: "PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m spacy download en_core_web_sm"
+          user: "1000"
+          env: [HTTP_PROXY, HTTPS_PROXY]
+          description: "Download spaCy English model"
+      files:
+        - path: /home/agent/.mem0/config.json
+          mode: "0644"
+          overwrite: false
+          description: "Mem0 config using OpenAI; key injected by the sbx proxy from the stored openai secret"
+          content: |
+            {
+              "vector_store": {
+                "provider": "qdrant",
+                "config": {
+                  "collection_name": "mem0_openai",
+                  "path": "/home/agent/.mem0/qdrant",
+                  "on_disk": true,
+                  "embedding_model_dims": 1536
+                }
+              },
+              "llm": {
+                "provider": "openai",
+                "config": {
+                  "model": "gpt-4o-mini",
+                  "openai_base_url": "https://api.openai.com/v1"
+                }
+              },
+              "embedder": {
+                "provider": "openai",
+                "config": {
+                  "model": "text-embedding-3-small",
+                  "openai_base_url": "https://api.openai.com/v1"
+                }
+              }
+            }
